@@ -1,0 +1,39 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "@ansvar/congolese-law-mcp",
+  "description": "Congo (DRC) legislation database with full-text search across statutes and regulations. Part of the Ansvar Open Law initiative.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ansvar-Systems/Congo-DRC-law-mcp"
+  },
+  "homepage": "https://ansvar.eu",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "keywords": [
+    "congolese-law",
+    "congolese",
+    "legal",
+    "compliance",
+    "mcp"
+  ],
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@ansvar/congolese-law-mcp",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      }
+    },
+    {
+      "registryType": "npm",
+      "identifier": "@ansvar/congolese-law-mcp",
+      "version": "1.0.0",
+      "transport": {
+        "type": "streamable-http",
+        "url": "https://congolese-law-mcp.vercel.app/mcp"
+      }
+    }
+  ],
+  "display_name": "Congo (DRC) Law MCP"
+}
