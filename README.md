@@ -38,12 +38,12 @@ This MCP server makes Congolese law **searchable, cross-referenceable, and AI-re
 
 > Connect directly to the hosted version -- zero dependencies, nothing to install.
 
-**Endpoint:** `https://congolese-law-mcp.vercel.app/mcp`
+**Endpoint:** `https://mcp.ansvar.eu/law-cd/mcp`
 
 | Client | How to Connect |
 |--------|---------------|
 | **Claude.ai** | Settings > Connectors > Add Integration > paste URL |
-| **Claude Code** | `claude mcp add congolese-law --transport http https://congolese-law-mcp.vercel.app/mcp` |
+| **Claude Code** | `claude mcp add congolese-law --transport http https://mcp.ansvar.eu/law-cd/mcp` |
 | **Claude Desktop** | Add to config (see below) |
 | **GitHub Copilot** | Add to VS Code settings (see below) |
 
@@ -54,7 +54,7 @@ This MCP server makes Congolese law **searchable, cross-referenceable, and AI-re
   "mcpServers": {
     "congolese-law": {
       "type": "url",
-      "url": "https://congolese-law-mcp.vercel.app/mcp"
+      "url": "https://mcp.ansvar.eu/law-cd/mcp"
     }
   }
 }
@@ -67,7 +67,7 @@ This MCP server makes Congolese law **searchable, cross-referenceable, and AI-re
   "github.copilot.chat.mcp.servers": {
     "congolese-law": {
       "type": "http",
-      "url": "https://congolese-law-mcp.vercel.app/mcp"
+      "url": "https://mcp.ansvar.eu/law-cd/mcp"
     }
   }
 }
