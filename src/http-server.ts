@@ -20,9 +20,9 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { createServer as createHttpServer, IncomingMessage, ServerResponse } from 'node:http';
 import { randomUUID } from 'crypto';
 import { createHash } from 'crypto';
-import { existsSync, openSync, readSync, closeSync, readFileSync, statSync } from 'fs';
+import { existsSync, openSync, readSync, closeSync, readFileSync, statSync, copyFileSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, basename } from 'path';
 import Database from '@ansvar/mcp-sqlite';
 
 import { registerTools } from './tools/registry.js';
@@ -77,6 +77,15 @@ function resolveDbPath(): string {
   );
 }
 
+// WASM SQLite (@ansvar/mcp-sqlite) can't read overlay2-backed files; copy to /tmp (tmpfs) once. See issue #22.
+function ensureReadableDb(srcPath: string): string {
+  const tmpPath = join('/tmp', basename(srcPath));
+  if (!existsSync(tmpPath)) {
+    copyFileSync(srcPath, tmpPath);
+  }
+  return tmpPath;
+}
+
 // ---------------------------------------------------------------------------
 // Session management
 // ---------------------------------------------------------------------------
@@ -96,27 +105,29 @@ const sessions = new Map<string, StreamableHTTPServerTransport>();
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const dbPath = resolveDbPath();
+  const srcPath = resolveDbPath();
+  const dbPath = ensureReadableDb(srcPath);
   const db = new Database(dbPath, { readonly: true });
   db.pragma('foreign_keys = ON');
 
   const caps = detectCapabilities(db);
   const meta = readDbMetadata(db);
-  console.error(`[${SERVER_NAME}] Database: ${dbPath}`);
+  console.error(`[${SERVER_NAME}] Database: ${dbPath} (source: ${srcPath})`);
   console.error(`[${SERVER_NAME}] Tier: ${meta.tier}, Capabilities: ${[...caps].join(', ')}`);
 
   // About context for the about tool — use partial hash to avoid loading
-  // entire DB into memory (some are 200MB+).
+  // entire DB into memory (some are 200MB+). Read from srcPath so the
+  // fingerprint and mtime reflect the canonical image-layer DB, not the /tmp copy.
   let fingerprint = 'unknown';
   let dbBuilt = new Date().toISOString();
   try {
     const SAMPLE = 64 * 1024;
-    const fd = openSync(dbPath, 'r');
+    const fd = openSync(srcPath, 'r');
     const buf = Buffer.alloc(SAMPLE);
     readSync(fd, buf, 0, SAMPLE, 0);
     closeSync(fd);
     fingerprint = createHash('sha256').update(buf).digest('hex').slice(0, 12);
-    dbBuilt = statSync(dbPath).mtime.toISOString();
+    dbBuilt = statSync(srcPath).mtime.toISOString();
   } catch { /* non-fatal */ }
 
   // Try db_metadata table for built_at (newer repos have this)

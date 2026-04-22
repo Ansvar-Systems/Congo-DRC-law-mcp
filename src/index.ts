@@ -9,10 +9,10 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import Database from '@ansvar/mcp-sqlite';
-import { join, dirname } from 'path';
+import { join, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { createHash } from 'crypto';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync, copyFileSync } from 'fs';
 
 import { registerTools, type AboutContext } from './tools/registry.js';
 import { detectCapabilities, readDbMetadata } from './capabilities.js';
@@ -31,11 +31,20 @@ function resolveDbPath(): string {
   return join(__dirname, '..', 'data', 'database.db');
 }
 
+// WASM SQLite (@ansvar/mcp-sqlite) can't read overlay2-backed files; copy to /tmp (tmpfs) once. See issue #22.
+function ensureReadableDb(srcPath: string): string {
+  const tmpPath = join('/tmp', basename(srcPath));
+  if (!existsSync(tmpPath)) {
+    copyFileSync(srcPath, tmpPath);
+  }
+  return tmpPath;
+}
+
 let db: InstanceType<typeof Database> | null = null;
 
 function getDb(): InstanceType<typeof Database> {
   if (!db) {
-    const dbPath = resolveDbPath();
+    const dbPath = ensureReadableDb(resolveDbPath());
     db = new Database(dbPath, { readonly: true });
     db.pragma('foreign_keys = ON');
 
