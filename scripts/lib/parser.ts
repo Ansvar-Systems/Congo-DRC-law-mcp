@@ -362,6 +362,6 @@ export function parseHtml(html: string, act: ActIndexEntry): ParsedAct {
 }
 
 // Re-export parsePdfText as the primary parser
-export function parseCongo (DRC)LawHtml(html: string, act: ActIndexEntry): ParsedAct {
+export function parseCongoleseHtml(html: string, act: ActIndexEntry): ParsedAct {
   return parsePdfText(html, act);
 }
