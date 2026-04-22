@@ -12,7 +12,7 @@ import Database from '@ansvar/mcp-sqlite';
 import { join, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { createHash } from 'crypto';
-import { readFileSync, existsSync, copyFileSync } from 'fs';
+import { readFileSync, existsSync, copyFileSync, statfsSync } from 'fs';
 
 import { registerTools, type AboutContext } from './tools/registry.js';
 import { detectCapabilities, readDbMetadata } from './capabilities.js';
@@ -31,8 +31,18 @@ function resolveDbPath(): string {
   return join(__dirname, '..', 'data', 'database.db');
 }
 
-// WASM SQLite (@ansvar/mcp-sqlite) can't read overlay2-backed files; copy to /tmp (tmpfs) once. See issue #22.
+// /tmp must be a real tmpfs — overlay2's writable layer triggers the same WASM SQLite read bug. See issue #22.
 function ensureReadableDb(srcPath: string): string {
+  const st = statfsSync('/tmp');
+  const TMPFS_MAGIC = 0x01021994;
+  if (Number(st.type) !== TMPFS_MAGIC) {
+    throw new Error(
+      `/tmp is not tmpfs (filesystem type 0x${Number(st.type).toString(16)}). ` +
+      `WASM SQLite (@ansvar/mcp-sqlite) cannot read overlay2-backed files, and without a tmpfs mount /tmp sits on the container's writable layer. ` +
+      `Start the container with 'docker run --tmpfs /tmp ...' or deploy via deployment/public-mcp/docker-compose.law.yml (x-law-defaults sets tmpfs: /tmp). ` +
+      `See docs/known-issues/wasm-sqlite-overlay-filesystem.md.`,
+    );
+  }
   const tmpPath = join('/tmp', basename(srcPath));
   if (!existsSync(tmpPath)) {
     copyFileSync(srcPath, tmpPath);
